@@ -1,0 +1,899 @@
+/* ========================================
+   App Usage Tracker
+   白地・罫線のみで構成する控えめな配色。
+   常時表示を前提に、彩度は落とし、色は注意すべき値にのみ使う。
+   ======================================== */
+
+:root {
+    /* 面 */
+    --bg: #ffffff;
+    --bg-hover: #f7f7f5;
+    --bg-active: #f1f0ee;
+
+    /* 文字 */
+    --text: #37352f;
+    --text-sub: #787774;
+    --text-muted: #9b9a97;
+
+    /* 罫線 */
+    --rule: #ebebea;
+    --border: #e3e2e0;
+    --border-strong: #d3d1cc;
+
+    /* 注意色（超過の表示にのみ使用） */
+    --alert: #b05c4a;
+
+    /* ボタンなど操作部品の高さ */
+    --control-height: 29px;
+    /* ヘッダー右側の段の間隔 */
+    --header-row-gap: 8px;
+
+    /* グラフの棒（使用時間の多い順に濃い） */
+    --bar-1: #8f8e8a;
+    --bar-2: #a5a4a0;
+    --bar-3: #bab9b5;
+    --bar-4: #cecdca;
+    --bar-5: #dedddb;
+    --bar-6: #e6e5e2;
+
+    --radius: 4px;
+
+    /* 画面の高さに応じて広げる寸法（下の @media で上書きする） */
+    --content-width: 760px;
+    --chart-height: 240px;
+    --ring-size: 290px;
+    --heat-cell-height: 12px;
+}
+
+/* 縦長の画面では、余白ではなく内容で高さを埋める */
+/* 高さに余裕がある画面では、ページ全体をスクロールさせず、
+   グラフの位置を固定したまま一覧だけを追従させる */
+@media (min-height: 1000px) {
+    .app {
+        height: 100vh;
+        min-height: 0;
+    }
+
+    main {
+        min-height: 0;
+    }
+
+    /* 制限時間のセクション（ダッシュボード） */
+    .section--list {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+    }
+
+    .scroll-area {
+        flex: 1;
+        min-height: 0;
+    }
+}
+
+@media (min-height: 1000px) {
+    :root {
+        --content-width: 860px;
+        --chart-height: 420px;
+        --ring-size: 506px;
+        --heat-cell-height: 17px;
+    }
+}
+
+@media (min-height: 1500px) {
+    :root {
+        --content-width: 900px;
+        --chart-height: 620px;
+        --ring-size: 747px;
+        --heat-cell-height: 24px;
+    }
+}
+
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    /* 縦スクロールバーの分の幅を常に確保する。
+       画面によってバーが出たり消えたりすると、切り替えたときに
+       中身が左右へずれてしまうため。
+
+       both-edges で左右へ均等に確保する。右だけだと中身が
+       画面の中央から半分ぶん左へずれてしまう */
+    scrollbar-gutter: stable both-edges;
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, 'Segoe UI', 'Yu Gothic UI', system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+}
+
+.app {
+    max-width: var(--content-width);
+    min-height: 100vh;
+    margin: 0 auto;
+    padding: 0 28px 40px;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 各ページの主役となるセクションを、残りの高さいっぱいに広げる */
+.section--grow {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* ヘッダー */
+
+.header {
+    display: flex;
+    /* 右側は2段あるため、上端を揃えてアプリ名と1段目のボタンを同じ高さにする */
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 28px 0 20px;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+    /* 右側1段目と同じ高さにし、アプリ名とボタンの中心を合わせる。
+       ヘッダー全体の高さは、常に2段ある右側が決める */
+    min-height: var(--control-height);
+}
+
+/* アイコンは favicon.svg を共用する（色はSVG側で指定） */
+.logo {
+    display: block;
+    flex-shrink: 0;
+}
+
+.header h1 {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+}
+
+.version {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* 画面の切り替え */
+
+.nav {
+    display: flex;
+    gap: 2px;
+    margin-left: 6px;
+}
+
+.nav a {
+    padding: 3px 10px;
+    font-size: 12px;
+    color: var(--text-sub);
+    text-decoration: none;
+    border-radius: var(--radius);
+    white-space: nowrap;
+}
+
+.nav a:hover {
+    background: var(--bg-hover);
+}
+
+.nav a.active {
+    color: var(--text);
+    background: var(--bg-active);
+}
+
+.header-right {
+    /* 状態表示と日付操作を上下2段に並べる */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--header-row-gap);
+}
+
+.header-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    /* 中身が無い段でも高さを保ち、画面ごとのずれを防ぐ */
+    min-height: var(--control-height);
+}
+
+.status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-sub);
+    white-space: nowrap;
+}
+
+.dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-muted);
+}
+
+.dot.paused,
+.dot.offline {
+    background: var(--alert);
+}
+
+/* アプリ本体と通信できていないときは、表示中の値が古いことを示す */
+.status.offline {
+    color: var(--alert);
+}
+
+/* ボタン */
+
+.btn {
+    min-height: var(--control-height);
+    padding: 5px 12px;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.btn:hover {
+    background: var(--bg-hover);
+}
+
+.btn:active {
+    background: var(--bg-active);
+}
+
+.btn-primary {
+    color: var(--bg);
+    background: var(--text);
+    border-color: var(--text);
+}
+
+.btn-primary:hover,
+.btn-primary:active {
+    background: #4a4741;
+}
+
+/* 集計値 */
+
+.stats {
+    display: flex;
+    gap: 40px;
+    padding-bottom: 22px;
+    border-bottom: 1px solid var(--rule);
+}
+
+.stat {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.stat-value {
+    font-size: 22px;
+    font-weight: 500;
+    line-height: 1.25;
+}
+
+/* 超過が発生している場合のみ着色する */
+.stat-value.alert {
+    color: var(--alert);
+}
+
+/* 合計とその増減を横に並べる */
+.stat-line {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+/* 前の期間との増減。合計より控えめに出す */
+.stat-delta {
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+/* 一覧が画面に収まらない場合、グラフを動かさずここだけをスクロールさせる */
+.scroll-area {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+/* セクション */
+
+.section {
+    padding: 24px 0;
+    border-bottom: 1px solid var(--rule);
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.section-header h2 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-sub);
+}
+
+.tabs {
+    display: flex;
+    gap: 2px;
+}
+
+.tab-btn {
+    padding: 3px 11px;
+    font-family: inherit;
+    font-size: 12px;
+    color: var(--text-sub);
+    background: transparent;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+}
+
+.tab-btn:hover {
+    background: var(--bg-hover);
+}
+
+.tab-btn.active {
+    color: var(--text);
+    background: var(--bg-active);
+}
+
+.chart-area {
+    position: relative;
+    height: var(--chart-height);
+}
+
+/* 制限時間の設定 */
+
+.form-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.select {
+    flex: 1;
+    min-width: 0;
+    padding: 5px 10px;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    outline: none;
+}
+
+.select:focus {
+    border-color: var(--border-strong);
+}
+
+.presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 22px;
+}
+
+.preset-btn {
+    padding: 4px 11px;
+    font-family: inherit;
+    font-size: 12px;
+    color: var(--text-sub);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+}
+
+.preset-btn:hover {
+    background: var(--bg-hover);
+}
+
+.preset-btn.active {
+    color: var(--bg);
+    background: var(--text);
+    border-color: var(--text);
+}
+
+/* 制限時間の一覧 */
+
+.limit-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 9px 0;
+    border-top: 1px solid var(--rule);
+}
+
+.limit-name {
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.limit-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.limit-badge {
+    font-size: 12px;
+    color: var(--text-sub);
+    font-variant-numeric: tabular-nums;
+}
+
+/* 制限に対する使用状況。名前の下に横棒で出す */
+.limit-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.limit-gauge {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--rule);
+    overflow: hidden;
+}
+
+.limit-gauge-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: var(--text-muted);
+    /* 使用時間は 15 秒ごとに更新されるため、伸びる動きを付ける */
+    transition: width 0.3s ease;
+}
+
+/* 名前と「使用 / 上限」を同じ行に置く */
+.limit-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+/* 残りが少ないときと超えたときだけ着色する */
+.limit-row.near .limit-gauge-fill {
+    background: var(--text-sub);
+}
+
+.limit-row.over .limit-gauge-fill {
+    background: var(--alert);
+}
+
+.limit-row.over .limit-badge {
+    color: var(--alert);
+}
+
+.btn-icon {
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: var(--text-muted);
+    background: transparent;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+}
+
+.btn-icon:hover {
+    color: var(--alert);
+    background: var(--bg-hover);
+}
+
+.empty-state {
+    padding: 14px 0;
+    font-size: 13px;
+    color: var(--text-muted);
+    border-top: 1px solid var(--rule);
+}
+
+/* タイムライン */
+
+.section-note {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.date-input {
+    padding: 4px 8px;
+    font-family: inherit;
+    font-size: 12px;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    outline: none;
+}
+
+.date-input:focus {
+    border-color: var(--border-strong);
+}
+
+/* 24時間の円環（0時が上、時計回り） */
+.ring {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.ring-svg {
+    width: 100%;
+    max-width: var(--ring-size);
+}
+
+.ring-arc {
+    transition: opacity 0.12s;
+}
+
+.ring-svg:hover .ring-arc {
+    opacity: 0.45;
+}
+
+.ring-svg .ring-arc:hover {
+    opacity: 1;
+}
+
+.ring-arc.is-dimmed {
+    opacity: 0.25;
+}
+
+/* 凡例で選んだアプリの区間は、色を濃くして際立たせる */
+.ring-arc.is-selected {
+    stroke: var(--text);
+}
+
+.legend-item.active .legend-swatch {
+    background: var(--text) !important;
+}
+
+.ring-hour {
+    font-size: 8px;
+    fill: var(--text-muted);
+}
+
+.ring-main {
+    font-size: 15px;
+    font-weight: 500;
+    fill: var(--text);
+}
+
+.ring-sub {
+    font-size: 8px;
+    fill: var(--text-muted);
+}
+
+/* その日の要約（開始・終了・最長・前日比） */
+
+.day-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 14px 0;
+    margin-bottom: 18px;
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+}
+
+.day-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.day-stat-label {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.day-stat-value {
+    font-size: 15px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* 区間の一覧（時刻順） */
+
+.list-heading {
+    font-size: 11px;
+    color: var(--text-muted);
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--rule);
+    margin: 20px 0 4px;
+}
+
+.session-row {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr) max-content;
+    align-items: center;
+    gap: 12px;
+    padding: 4px 0;
+    font-size: 12px;
+}
+
+.session-row.is-dimmed {
+    opacity: 0.35;
+}
+
+.session-time {
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.session-app {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.session-duration {
+    color: var(--text-sub);
+    white-space: nowrap;
+}
+
+/* 履歴（日 × 時間のヒートマップ） */
+
+/* ヒートマップと凡例をひとまとまりとして、上下の中央へ置く */
+.heat-block {
+    margin: auto 0;
+    width: 100%;
+}
+
+.heatmap {
+    display: flex;
+    flex-direction: column;
+    gap: var(--heat-row-gap, 2px);
+    padding-bottom: 14px;
+}
+
+.heat-row,
+.heat-axis {
+    display: grid;
+    /* 左右の列幅を揃えて、セルの並びを画面の中央に置く */
+    grid-template-columns: 62px minmax(0, 1fr) 62px;
+    align-items: center;
+    gap: 10px;
+}
+
+.heat-row {
+    padding: 1px 4px;
+    margin: 0 -4px;
+    border-radius: var(--radius);
+    text-decoration: none;
+    color: inherit;
+}
+
+.heat-row:hover {
+    background: var(--bg-hover);
+}
+
+.heat-date {
+    font-size: 11px;
+    color: var(--text-sub);
+    white-space: nowrap;
+}
+
+.heat-cells {
+    display: grid;
+    grid-template-columns: repeat(24, 1fr);
+    gap: 1px;
+}
+
+.heat-cell {
+    height: var(--heat-cell-height);
+    border-radius: 1px;
+    background: var(--bg-hover);
+}
+
+.heat-cell[data-level="1"] { background: var(--bar-5); }
+.heat-cell[data-level="2"] { background: var(--bar-3); }
+.heat-cell[data-level="3"] { background: var(--bar-2); }
+.heat-cell[data-level="4"] { background: var(--bar-1); }
+
+.heat-total {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-align: right;
+    white-space: nowrap;
+}
+
+.heat-ticks {
+    position: relative;
+    height: 14px;
+    margin-top: 2px;
+}
+
+.heat-ticks span {
+    position: absolute;
+    transform: translateX(-50%);
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.heat-legend {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.heat-legend .heat-cell {
+    width: 12px;
+}
+
+/* 使用時間の長い順に縦に並べる（色 / アプリ名 / 時間） */
+.legend {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.legend-item {
+    display: grid;
+    grid-template-columns: 9px minmax(0, 1fr) max-content;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 3px 6px;
+    margin: 0 -6px;
+    font-family: inherit;
+    font-size: 12px;
+    text-align: left;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+}
+
+.legend-item:hover {
+    background: var(--bg-hover);
+}
+
+.legend-item.active {
+    background: var(--bg-active);
+}
+
+.legend-swatch {
+    width: 9px;
+    height: 9px;
+    border-radius: 2px;
+}
+
+.legend-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text);
+}
+
+.legend-duration {
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+/* 通知 */
+
+.toast-msg {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    padding: 9px 14px;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: 0 3px 12px rgba(15, 15, 15, 0.08);
+    z-index: 100;
+}
+
+/* 狭い画面 */
+
+@media (max-width: 640px) {
+    .app {
+        padding: 0 18px 40px;
+    }
+
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .stats {
+        gap: 28px;
+    }
+}
+
+/* 端末を示す小さな印（アプリ名の横に添える） */
+.device-tag {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 5px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-size: 10px;
+    line-height: 1.4;
+    color: var(--text-muted);
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+/* 端末からの受信が途絶えたときの警告。見落とすと記録が失われるため目立たせる */
+.sync-warning {
+    padding: 3px 9px;
+    border: 1px solid var(--alert);
+    border-radius: var(--radius);
+    font-size: 12px;
+    color: var(--alert);
+    white-space: nowrap;
+    cursor: help;
+}
+
+/* ヘッダーに置く絞り込み */
+.filter-label {
+    font-size: 12px;
+    color: var(--text-sub);
+}
+
+.select--compact {
+    /* .select は入力欄の中で伸びる前提のため、ヘッダーでは伸ばさない */
+    flex: none;
+    min-height: var(--control-height);
+    padding: 4px 8px;
+    font-size: 12px;
+    max-width: 220px;
+}

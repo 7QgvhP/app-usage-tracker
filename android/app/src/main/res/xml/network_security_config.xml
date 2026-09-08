@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  同一LAN内のPCへは暗号化なしのHTTPで送信する。
+  自宅LAN内の自分のPCが相手であり、証明書を用意する現実的な手段がないため。
+  それ以外の通信先は既定どおりHTTPSを必須とする。
+-->
+<network-security-config xmlns:tools="http://schemas.android.com/tools">
+    <base-config cleartextTrafficPermitted="true" tools:ignore="InsecureBaseConfiguration">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

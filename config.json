@@ -1,0 +1,80 @@
+{
+  "web": {
+    "host": "127.0.0.1",
+    "port": 5000
+  },
+  "tracker": {
+    "poll_interval_seconds": 5,
+    "flush_interval_seconds": 60,
+    "notify_before_minutes": 5,
+    "idle_detection": {
+      "enabled": false,
+      "threshold_seconds": 300
+    }
+  },
+  "timeline": {
+    "min_session_seconds": 30,
+    "merge_gap_seconds": 60
+  },
+  "sync": {
+    "enabled": true,
+    "bind_host": "0.0.0.0",
+    "max_sessions_per_request": 5000,
+    "stale_hours": 24
+  },
+  "mini_window": {
+    "enabled": true,
+    "always_on_top": true,
+    "opacity": 0.92,
+    "font_size": 22
+  },
+  "logging": {
+    "level": "INFO",
+    "max_bytes": 1048576,
+    "backup_count": 3
+  },
+  "apps": {
+    "use_executable_name": true,
+    "ignore_processes": [
+      "explorer.exe",
+      "SearchHost.exe",
+      "ShellExperienceHost.exe",
+      "StartMenuExperienceHost.exe",
+      "TextInputHost.exe",
+      "ApplicationFrameHost.exe",
+      "SystemSettings.exe",
+      "LockApp.exe"
+    ],
+    "browser_processes": [
+      "chrome.exe"
+    ],
+    "browser_site_rules": [
+      {
+        "name": "YouTube",
+        "patterns": [
+          "- YouTube",
+          "YouTube"
+        ]
+      },
+      {
+        "name": "X (Twitter)",
+        "patterns": [
+          "/ X",
+          " on X",
+          "X"
+        ]
+      }
+    ]
+  },
+  "devices": {
+    "labels": {
+      "pc": "PC",
+      "nothing-a069": "スマホ"
+    }
+  },
+  "notion": {
+    "enabled": false,
+    "database_id": "",
+    "backfill_days": 7
+  }
+}

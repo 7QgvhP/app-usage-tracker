@@ -1,0 +1,13 @@
+# 改行コードはリポジトリ・作業ツリーとも LF に統一する
+# （core.autocrlf=true の環境で作業ファイルが書き換わるのを防ぐ）
+* text=auto eol=lf
+
+# Windows のバッチファイルは CRLF でなければ動かないことがある
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# 変換してはいけないもの
+*.png binary
+*.ico binary
+*.jar binary
+*.apk binary

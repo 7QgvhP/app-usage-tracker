@@ -1,0 +1,9 @@
+# ビルド生成物
+build/
+.gradle/
+# SDKの場所は環境ごとに異なる
+local.properties
+# Android Studio の作業ファイル
+.idea/
+*.iml
+.cxx/

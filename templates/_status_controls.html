@@ -1,0 +1,9 @@
+{# ヘッダー右上の状態表示と操作。3画面で同じものを使う #}
+{# 端末からの受信が途絶えたときだけ出す。普段は空 #}
+<span class="sync-warning" id="syncWarning" hidden></span>
+<span class="status">
+    <span class="dot" id="statusDot"></span>
+    <span id="statusText">計測中</span>
+</span>
+<button class="btn" id="showMiniBtn">ミニウィンドウ</button>
+<button class="btn" id="togglePauseBtn">一時停止</button>

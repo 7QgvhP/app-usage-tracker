@@ -1,0 +1,4 @@
+<resources>
+    <!-- 画面の中身は Compose 側で描画するため、土台のみを定義する -->
+    <style name="Theme.AppUsageTracker" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

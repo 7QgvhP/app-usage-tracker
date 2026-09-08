@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% set page_key = "history" %}
+
+{% block page_title %}履歴 - App Usage Tracker{% endblock %}
+
+{% block script %}
+<script defer src="/static/history.js?v={{ version }}"></script>
+{% endblock %}
+
+{# 履歴だけは2段目が日付ではなくアプリの絞り込み #}
+{% block header_rows %}
+<label class="filter-label" for="appFilter">アプリ</label>
+<select class="select select--compact" id="appFilter">
+    <option value="">すべて</option>
+</select>
+{% endblock %}
+
+{% block content %}
+        <section class="section section--grow">
+            <div class="section-header">
+                <h2 id="historyTitle">過去の利用状況</h2>
+                <span class="section-note" id="historyNote"></span>
+            </div>
+
+            <div class="heat-block">
+                <div class="heatmap" id="heatmap"></div>
+
+                <div class="heat-legend">
+                    <span>少ない</span>
+                    <span class="heat-cell" data-level="0"></span>
+                    <span class="heat-cell" data-level="1"></span>
+                    <span class="heat-cell" data-level="2"></span>
+                    <span class="heat-cell" data-level="3"></span>
+                    <span class="heat-cell" data-level="4"></span>
+                    <span>多い</span>
+                </div>
+            </div>
+        </section>
+{% endblock %}
