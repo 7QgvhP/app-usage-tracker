@@ -1,0 +1,23 @@
+# ── 記録データ（個人の利用状況・トークンを含むため公開しない）──
+data/
+
+# ── ログ ──
+app.log
+app.log.*
+
+# ── Python ──
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# ── Android ──
+# SDK の場所はこの環境固有
+android/local.properties
+android/.gradle/
+android/build/
+android/app/build/
+
+# ── 環境固有のもの ──
+# 絶対パスを埋め込むため。作り方は README「起動」を参照
+*.lnk
+.claude/settings.local.json

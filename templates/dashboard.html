@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% set page_key = "dashboard" %}
+
+{% block head %}
+<script defer src="/static/vendor/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block script %}
+<script defer src="/static/app.js?v={{ version }}"></script>
+{% endblock %}
+
+{% block content %}
+        <section class="stats">
+            <div class="stat">
+                <span class="stat-label">合計</span>
+                <div class="stat-line">
+                    <span class="stat-value" id="totalToday">0分</span>
+                    <span class="stat-delta" id="totalDiff"></span>
+                </div>
+            </div>
+            <div class="stat">
+                <span class="stat-label">アプリ数</span>
+                <span class="stat-value" id="appCount">0</span>
+            </div>
+            <div class="stat" title="制限時間はこのPCの使用時間に対して働きます">
+                <span class="stat-label">超過（PC）</span>
+                <span class="stat-value" id="overLimitCount">0</span>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="section-header">
+                <h2 id="usageTitle">使用時間</h2>
+                <span class="section-note" id="deviceNote"></span>
+                <nav class="tabs">
+                    <button class="tab-btn active" data-period="day">日</button>
+                    <button class="tab-btn" data-period="week">週</button>
+                    <button class="tab-btn" data-period="month">月</button>
+                </nav>
+            </div>
+            <div class="chart-area">
+                <canvas id="usageChart"></canvas>
+            </div>
+        </section>
+
+        <section class="section section--list">
+            <div class="section-header">
+                <h2>制限時間</h2>
+                <span class="section-note">このPCの使用時間に対して働きます</span>
+            </div>
+
+            <form id="limitForm">
+                <div class="form-row">
+                    <select class="select" id="limitApp">
+                        <option value="">アプリを選択</option>
+                    </select>
+                    <button type="submit" class="btn btn-primary">設定</button>
+                </div>
+                <div class="presets">
+                    <button type="button" class="preset-btn" data-minutes="15">15分</button>
+                    <button type="button" class="preset-btn" data-minutes="30">30分</button>
+                    <button type="button" class="preset-btn" data-minutes="60">1時間</button>
+                    <button type="button" class="preset-btn" data-minutes="120">2時間</button>
+                    <button type="button" class="preset-btn" data-minutes="180">3時間</button>
+                    <button type="button" class="preset-btn" data-minutes="240">4時間</button>
+                </div>
+            </form>
+
+            <div class="scroll-area" id="limitsList">
+                <!-- app.js が動的に描画する -->
+            </div>
+        </section>
+{% endblock %}

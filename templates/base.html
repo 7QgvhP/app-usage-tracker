@@ -1,0 +1,59 @@
+{#
+  base.html - 全ページ共通の骨組み
+
+  head・ヘッダー・ナビゲーションは3ページで同じ。各ページは以下のブロックだけを埋める。
+
+  - page_title : タブに出す名前（省略時は「App Usage Tracker」）
+  - page_key   : ナビの現在地（dashboard / timeline / history）
+  - head       : このページだけで読み込む追加のもの
+  - script     : このページの処理（common.js の後に読み込まれる）
+  - header_rows: ヘッダー右側の2段目（既定は日付の切り替え）
+  - content    : <main> の中身
+#}
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block page_title %}App Usage Tracker{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v={{ version }}">
+    <link rel="stylesheet" href="/static/style.css?v={{ version }}">
+    {% block head %}{% endblock %}
+    <!-- 共通の整形処理を先に読み込む（defer は記述順に実行される） -->
+    <script defer src="/static/common.js?v={{ version }}"></script>
+    {% block script %}{% endblock %}
+</head>
+
+<body>
+    <div class="app">
+        <header class="header">
+            <div class="header-left">
+                <img class="logo" src="/static/favicon.svg?v={{ version }}" width="17" height="17" alt=""
+                    aria-hidden="true">
+                <h1>App Usage Tracker</h1>
+                <span class="version">v{{ version }}</span>
+                <nav class="nav">
+                    <a href="/" {% if page_key == 'dashboard' %}class="active" {% endif %}>ダッシュボード</a>
+                    <a href="/timeline" {% if page_key == 'timeline' %}class="active" {% endif %}>タイムライン</a>
+                    <a href="/history" {% if page_key == 'history' %}class="active" {% endif %}>履歴</a>
+                </nav>
+            </div>
+            <div class="header-right">
+                <div class="header-row">
+                    {% include "_status_controls.html" %}
+                </div>
+                <div class="header-row">
+                    {% block header_rows %}{% include "_date_controls.html" %}{% endblock %}
+                </div>
+            </div>
+        </header>
+
+        <main>
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+</body>
+
+</html>

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% set page_key = "timeline" %}
+
+{% block page_title %}タイムライン - App Usage Tracker{% endblock %}
+
+{% block script %}
+<script defer src="/static/timeline.js?v={{ version }}"></script>
+{% endblock %}
+
+{% block content %}
+        <section class="section section--grow">
+            <div class="section-header">
+                <h2 id="timelineTitle">使用時刻</h2>
+                <span class="section-note" id="timelineSummary"></span>
+            </div>
+
+            <div class="ring" id="ring"></div>
+
+            <div class="day-stats" id="daySummary"></div>
+
+            <div class="legend" id="legend"></div>
+
+            <div class="list-heading" id="sessionHeading" hidden>区間の一覧</div>
+            <div class="scroll-area" id="sessionList"></div>
+        </section>
+{% endblock %}
