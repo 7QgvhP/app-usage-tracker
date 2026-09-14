@@ -423,9 +423,15 @@ New-NetFirewallRule -DisplayName "App Usage Tracker (sync)" -Direction Inbound -
 
 - スマホは**15分ごと**に自動で送信します
 - PCが起動していない間は端末に保存し、次に繋がったときにまとめて送ります
-- 同じ区間を何度送っても二重に記録されません
+- **同じ区間を何度送っても二重に記録されません。** スマホは区間ごとに
+  `{パッケージ名}:{開始時刻のエポックミリ秒}` という決まった `external_id` を振り、
+  PCは同じ値の区間を無視します。`usage_log` は加算せず、影響を受けた
+  `(端末, 日付)` の合計を区間から計算し直して置き換えます
 - **OSが保持する記録は数日分です。** スマホのアプリが長期間動かないと、
-  その間の記録は失われます
+  その間の記録は失われます。最低でも1日1回は送信できる状態にしてください
+- 端末名 `pc` は予約語で、スマホからの取り込みには使えません
+  （PC自身の記録を外部から上書きさせないため）
+- スマホ側の「一時停止」は、OSの記録を止められないため**表示を隠す動作**になります
 
 ### 同期が止まったときの警告
 
@@ -480,6 +486,41 @@ New-NetFirewallRule -DisplayName "App Usage Tracker (sync)" -Direction Inbound -
 
 ---
 
+## 既知の制限
+
+### 表示名が長いまま残るアプリがある
+
+実行ファイルの情報から名前を取るとき、` - ` 以降の切り捨てでは短くならない例があります
+（`mshta.exe` → `Microsoft (R) HTML Application host`）。また `CatchMe.exe`・
+`outhold_windows.exe`・`Super Battle Golf.exe` のように名前情報を持たない実行ファイルは、
+プロセス名のまま表示されます。いずれも `data/app_names.json` の `display` で個別に直せます。
+
+### ブラウザで判別できるのは登録済みのサイトだけ
+
+Chrome のサイト判定は、`apps.browser_site_rules` のパターンとウィンドウタイトルの照合です。
+登録した YouTube と X 以外のサイトは `Chrome` として記録されます。
+
+パターンはタイトルの一部との一致なので、**Chrome で開いた YouTube Music は `YouTube` として
+記録されます**。スマホの YouTube Music アプリは、前述の「束ねない」規則どおり別のアプリです。
+
+URL を取得する方式（拡張機能や UI Automation）は検討しましたが未着手です。
+ManicTime なども、URL は拡張機能から受け取る構成を採っています。
+Android版では実装できません（Android版 Chrome に拡張機能が無く、タイトルに相当する
+情報も取得できないため）。
+
+### アプリ別の棒グラフは端末間の重なりを除けない
+
+`usage_log` には時刻が無いため、同じアプリを2台で同時に使った時間を判別できません。
+重なりを除いた実時間（`union_seconds`）になるのは合計だけです。別々のアプリを2台で
+同時に使った時間はそれぞれ実際に使っているので、棒の合計が実時間を超えるのは正しい挙動です。
+
+### スマホでは過去の利用状況を見られない
+
+OSが保持する記録は数日で消えるため、スマホの利用状況画面はそれより前の日を表示できません。
+遡って見るには、PC側に閲覧用のAPIを追加し、アクセス制御を見直す必要があります。
+
+---
+
 ## 開発
 
 ```bash
@@ -493,6 +534,46 @@ Android版は `android/` にあります。
 ```bash
 cd android && ./gradlew assembleDebug testDebugUnitTest lint
 ```
+
+### Android版
+
+| 項目 | 内容 |
+|---|---|
+| ビルド | AGP 9.3.1 / Gradle 9.5.0 / compileSdk 37 / minSdk 29 |
+| JDK | Android Studio 同梱の JBR 25 |
+| 計測 | `UsageStatsManager.queryEvents()` |
+| 保存 | SQLite（`SQLiteOpenHelper`。Room は使いません） |
+| 画面 | Jetpack Compose |
+| 同期 | WorkManager で15分ごと |
+
+実機（Nothing A069 / Android 16）で動作を確認しています。
+
+**AGP 9 では書き方が変わっています。**
+
+- `org.jetbrains.kotlin.android` プラグインは不要です（AGP に内蔵されました）
+- `kotlinOptions` は廃止されました。Kotlin の設定はトップレベルの `kotlin { compilerOptions { } }` に書きます
+- `compileSdk` は `compileSdk { version = release(37) }` のブロック形式です
+
+**`AppOpsManager.unsafeCheckOpNoThrow` は意図的に残しています。** 非推奨ですが、
+代替の4引数版は API 36 以降のため minSdk 29 では使えません。
+
+**Android 11 以降は、他アプリの情報が既定で見えません。** 対処しないとアプリ名が
+`com.twitter.android` のようなパッケージ名のままになるため、マニフェストの
+`<queries>` で `MAIN` + `LAUNCHER` を宣言しています（`QUERY_ALL_PACKAGES` は
+用途に対して広すぎるため使いません）。ホームアプリは `MAIN` + `HOME` で特定して
+計測から除きます（PC版が `explorer.exe` を除くのと同じ考え方です）。
+
+端末の設定（`shared_prefs/settings.xml`）は `adb shell run-as` で読み書きできます。
+書き込むときはコマンド全体を二重引用符で囲み、内側を単引用符にしてください
+（引用符が崩れると Permission denied になります）。定期同期はすぐに実行させられます。
+
+```bash
+adb shell cmd jobscheduler run -f -n "androidx.work.systemjobscheduler" com.appusagetracker.mobile 1
+```
+
+機能を追加・変更するときは、**Android でも実装できるかを併せて判断します。**
+中核の `UsageStatsManager.queryEvents()` は `ACTIVITY_RESUMED` / `ACTIVITY_PAUSED` を
+時刻付きで返すため、合計時間と使用区間の両方を再現できます。
 
 ### 配色
 
@@ -657,5 +738,3 @@ Android側は `android/app/src/main/res/drawable/ic_launcher_foreground.xml` を
 手で書き換えます。SVGのパスをそのまま `android:pathData` へ移せますが、
 **ランチャーが中央66%の外を切り取る**ため、`<group>` の `scaleX` / `scaleY` で
 縮小して収める必要があります。
-
-未対応の課題は [TODO.md](TODO.md) にまとめています。
