@@ -718,23 +718,3 @@ def add_session(self, app_name, ...):
 期間の区切り方（週は月曜始まり・月は1日始まり）はサーバー側だけで決めており、
 `/api/usage/<period>` が開始日と終了日を返します。画面側では計算しません。
 「制限時間」は期間を持たない設定欄のため、名前のままです。
-
-### アイコンの差し替え
-
-アイコンの図形は `static/favicon.svg` が元になっています。差し替えるときは
-このSVGを置き換えてから、以下で `.ico` と PNG を作り直します。
-
-```bash
-python tools/render_icon.py
-```
-
-`.ico` は6寸法（16〜256px）を収め、**256px 以外は DIB 形式**で書き出します。
-エクスプローラーが小さい寸法の PNG を正しく扱えないことがあるためです。
-
-**ショートカットの見た目はWindowsがキャッシュしています。** すぐに変わらない場合は
-`ie4uinit.exe -show` を実行するか、サインインし直してください。
-
-Android側は `android/app/src/main/res/drawable/ic_launcher_foreground.xml` を
-手で書き換えます。SVGのパスをそのまま `android:pathData` へ移せますが、
-**ランチャーが中央66%の外を切り取る**ため、`<group>` の `scaleX` / `scaleY` で
-縮小して収める必要があります。
