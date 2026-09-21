@@ -5,6 +5,10 @@ Windows PC とスマートフォンのアプリ使用時間を記録し、ブラ
 - **PC版** v2.30.1（Python / Flask）
 - **Android版** v1.3.0（Kotlin / Jetpack Compose） … `android/` 配下
 
+**リポジトリのバージョンは PC版の番号を使います。** タグ（`vX.Y.Z`）、コミットメッセージ末尾の
+`(vX.Y.Z)`、`CHANGELOG.md` の見出しは、すべて PC版の番号に対応します。Android版だけの変更でも
+PC版の番号を上げ、Android版の番号はコミットメッセージやタグには使いません。
+
 ---
 
 ## 起動と停止
