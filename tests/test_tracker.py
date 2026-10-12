@@ -496,6 +496,94 @@ class TestSessionRecording:
         assert store.get_sessions(today_str())[0]["seconds"] == 90
 
 
+def set_session(tracker, app, started, ended, seconds, session_id=None):
+    """進行中の区間の状態を直接組み立てる（日付をまたぐ場面を再現するため）"""
+    tracker._session_app = app
+    tracker._session_started = started
+    tracker._session_ended = ended
+    tracker._session_seconds = float(seconds)
+    tracker._session_id = session_id
+
+
+class TestMidnightSplit:
+    """日付をまたぐ使用区間の分割
+
+    区間は開始日の記録として保存されるため、分割しないと日をまたいだ分が
+    前日の記録のまま残り、当日のタイムラインに出てこない。
+    """
+
+    def test_日付をまたぐ区間は0時で分割される(self, config, store, notifier):
+        tracker = make_tracker(config, store, notifier)
+        # 23:59:56 から翌日 00:18:38 まで使い続けた場面（実際に起きた不具合と同じ形）
+        set_session(
+            tracker, "chrome.exe",
+            datetime(2026, 1, 1, 23, 59, 56), datetime(2026, 1, 2, 0, 18, 38), 1121,
+        )
+
+        tracker._save_session()
+
+        first = store.get_sessions("2026-01-01")
+        second = store.get_sessions("2026-01-02")
+        assert len(first) == 1 and len(second) == 1
+        assert first[0]["ended_at"] == "2026-01-01 23:59:59"
+        assert first[0]["seconds"] == 4
+        assert second[0]["started_at"] == "2026-01-02 00:00:00"
+        assert second[0]["seconds"] == 1117
+        # 合計は分割前と変わらない
+        assert first[0]["seconds"] + second[0]["seconds"] == 1121
+
+    def test_保存済みの区間も前日分として閉じられる(self, config, store, notifier):
+        """先に書き出された行は、日付をまたいだ時点で前日の終わりに閉じ直す"""
+        tracker = make_tracker(config, store, notifier)
+        set_session(
+            tracker, "chrome.exe",
+            datetime(2026, 1, 1, 23, 50, 0), datetime(2026, 1, 1, 23, 59, 0), 540,
+        )
+        tracker._save_session()
+        assert len(store.get_sessions("2026-01-01")) == 1
+
+        # 日付をまたいで使い続ける
+        tracker._session_ended = datetime(2026, 1, 2, 0, 10, 0)
+        tracker._session_seconds = 1200.0
+        tracker._save_session()
+
+        first = store.get_sessions("2026-01-01")
+        second = store.get_sessions("2026-01-02")
+        assert len(first) == 1, "前日の行は増えない（同じ行を閉じ直す）"
+        assert first[0]["ended_at"] == "2026-01-01 23:59:59"
+        assert len(second) == 1
+        assert second[0]["started_at"] == "2026-01-02 00:00:00"
+        assert first[0]["seconds"] + second[0]["seconds"] == 1200
+
+    def test_スリープで複数日またいでも分割される(self, config, store, notifier):
+        tracker = make_tracker(config, store, notifier)
+        set_session(
+            tracker, "chrome.exe",
+            datetime(2026, 1, 1, 23, 59, 0), datetime(2026, 1, 3, 0, 5, 0), 120,
+        )
+
+        tracker._save_session()
+
+        assert len(store.get_sessions("2026-01-01")) == 1
+        assert len(store.get_sessions("2026-01-02")) == 1
+        assert store.get_sessions("2026-01-01")[0]["seconds"] == 60
+
+    def test_日付変更時に前日の日付で区間を始めない(self, config, store, notifier):
+        """走査間隔ぶんの巻き戻しが0時を越えないこと（不具合の根本原因）"""
+        tracker = make_tracker(config, store, notifier)
+
+        tracker._extend_session("chrome.exe", 10.0, now=datetime(2026, 1, 2, 0, 0, 5))
+
+        assert tracker._session_started == datetime(2026, 1, 2, 0, 0, 0)
+
+    def test_日付の途中では通常どおりさかのぼる(self, config, store, notifier):
+        tracker = make_tracker(config, store, notifier)
+
+        tracker._extend_session("chrome.exe", 10.0, now=datetime(2026, 1, 2, 12, 0, 5))
+
+        assert tracker._session_started == datetime(2026, 1, 2, 11, 59, 55)
+
+
 class TestDateRollover:
     """日付変更の処理"""
 

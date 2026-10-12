@@ -326,15 +326,25 @@ class AppTracker:
 
     # ── 使用区間（いつ使ったか） ──
 
-    def _extend_session(self, app_name: str, elapsed: float) -> None:
-        """使用区間を延長する（アプリが変わっていれば区切って新しく始める）"""
-        now = datetime.datetime.now()
+    def _extend_session(
+        self, app_name: str, elapsed: float, now: datetime.datetime | None = None
+    ) -> None:
+        """使用区間を延長する（アプリが変わっていれば区切って新しく始める）
+
+        now は検証のために差し替えられる。省略時は現在時刻を使う。
+        """
+        now = now or datetime.datetime.now()
         with self._session_lock:
             if self._session_app != app_name:
                 self._write_session()
                 self._session_app = app_name
-                # 走査の間隔ぶん手前から使い始めていたはずなので、その分さかのぼる
-                self._session_started = now - datetime.timedelta(seconds=elapsed)
+                # 走査の間隔ぶん手前から使い始めていたはずなので、その分さかのぼる。
+                # ただし前日へは戻さない。戻すと区間が前日の日付で記録され、
+                # 日付変更の分割も効かないまま延び続けてしまう
+                self._session_started = max(
+                    now - datetime.timedelta(seconds=elapsed),
+                    datetime.datetime.combine(now.date(), datetime.time.min),
+                )
                 self._session_seconds = 0.0
                 self._session_id = None
 
@@ -360,23 +370,48 @@ class AppTracker:
         """使用区間をデータベースへ書き出す（_session_lock を保持した状態で呼ぶ）
 
         1秒に満たない区間は記録しない。初回は登録し、以降は同じ行を更新する。
+
+        日付をまたぐ区間は 0時で分割する。区間は開始日の記録として保存されるため、
+        分割しないと日付をまたいだ分が前日の記録として残り、当日のタイムラインに
+        出てこなくなる（スリープで何日もまたぐこともあるため繰り返し判定する）。
         """
         if self._session_app is None:
             return
+
+        while self._session_started.date() < self._session_ended.date():
+            day_end = datetime.datetime.combine(
+                self._session_started.date(), datetime.time(23, 59, 59)
+            )
+            next_day = datetime.datetime.combine(
+                self._session_started.date() + datetime.timedelta(days=1), datetime.time.min
+            )
+            # その日のうちに収まる分だけを切り出す（実際の使用時間を超えないようにする）
+            room = (day_end - self._session_started).total_seconds() + 1
+            today_seconds = int(min(self._session_seconds, max(0.0, room)))
+            if today_seconds >= 1:
+                self._store_session(day_end, today_seconds)
+
+            self._session_seconds -= today_seconds
+            self._session_started = next_day
+            self._session_id = None
 
         seconds = int(self._session_seconds)
         if seconds < 1:
             return
 
-        started = self._session_started.strftime("%Y-%m-%d %H:%M:%S")
-        ended = self._session_ended.strftime("%Y-%m-%d %H:%M:%S")
+        self._store_session(self._session_ended, seconds)
+
+    def _store_session(self, ended: datetime.datetime, seconds: int) -> None:
+        """区間を1件、登録または更新する（_session_lock を保持した状態で呼ぶ）"""
+        started_text = self._session_started.strftime("%Y-%m-%d %H:%M:%S")
+        ended_text = ended.strftime("%Y-%m-%d %H:%M:%S")
         try:
             if self._session_id is None:
                 self._session_id = self._store.add_session(
-                    self._session_app, started, ended, seconds
+                    self._session_app, started_text, ended_text, seconds
                 )
             else:
-                self._store.update_session(self._session_id, ended, seconds)
+                self._store.update_session(self._session_id, ended_text, seconds)
         except StorageError:
             logger.warning("使用区間を保存できませんでした（計測は継続します）")
 
