@@ -2,7 +2,7 @@
 
 Windows PC とスマートフォンのアプリ使用時間を記録し、ブラウザで確認するための個人用ツールです。
 
-- **PC版** v2.30.4（Python / Flask）
+- **PC版** v2.30.5（Python / Flask）
 - **Android版** v1.3.0（Kotlin / Jetpack Compose） … `android/` 配下
 
 **リポジトリのバージョンは PC版の番号を使います。** タグ（`vX.Y.Z`）、コミットメッセージ末尾の
