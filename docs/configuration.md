@@ -44,8 +44,8 @@
 - **`ignore_processes`** … 計測しないプロセス名
 - **`browser_site_rules`** … Chrome のウィンドウタイトルからサイトを判定する規則
 
-`config.json` は「**名前をどう決めるか**」だけを持ちます。決まった名前を任意の表記へ
-読み替えるのは `data/app_names.json`（前節の対応表）の役目です。
+`config.json` は「**名前をどう決めるか**」だけを持つ。決まった名前を任意の表記へ
+読み替えるのは `data/app_names.json`（前節の対応表）の役目である。
 
 - **`browser_processes`** … サイトを判定するブラウザのプロセス名（既定 `chrome.exe`）
 

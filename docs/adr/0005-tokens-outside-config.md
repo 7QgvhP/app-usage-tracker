@@ -1,7 +1,7 @@
 # 0005. トークンは `config.json` に書かず、`data/` の下のファイルに置く
 
 - ステータス: Accepted
-- 日付: 不明
+- 日付: 2026-09-09 以前
 
 ## 背景（Context）
 
@@ -13,5 +13,5 @@ Notion のトークンは `data/notion_token.txt`、同期のトークンは `da
 
 ## 理由と検討した代替案（Consequences / Alternatives）
 
-- 設定ファイルは、画面共有などで映る可能性があるため（旧 README より）。
+- 設定ファイルは、画面共有などで映る可能性があるため。
 - 検討した代替案: `config.json` に書く。上記の理由で採用しない。

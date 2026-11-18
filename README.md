@@ -1,13 +1,13 @@
 # App Usage Tracker
 
-Windows PC とスマートフォンのアプリ使用時間を記録し、ブラウザで確認するための個人用ツールです。
+Windows PC とスマートフォンのアプリ使用時間を記録し、ブラウザで確認するための個人用ツールである。
 
-- **PC版** v2.30.6（Python / Flask）
+- **PC版** v2.30.7（Python / Flask）
 - **Android版** v1.3.0（Kotlin / Jetpack Compose） … `android/` 配下
 
-**リポジトリのバージョンは PC版の番号を使います。** タグ（`vX.Y.Z`）、コミットメッセージ末尾の
-`(vX.Y.Z)`、`CHANGELOG.md` の見出しは、すべて PC版の番号に対応します。Android版だけの変更でも
-PC版の番号を上げ、Android版の番号はコミットメッセージやタグには使いません。
+**リポジトリのバージョンは PC版の番号を使う。** タグ（`vX.Y.Z`）、コミットメッセージ末尾の
+`(vX.Y.Z)`、`CHANGELOG.md` の見出しは、すべて PC版の番号に対応する。Android版だけの変更でも
+PC版の番号を上げ、Android版の番号はコミットメッセージやタグには使わない。
 
 ## 概要
 
@@ -47,4 +47,4 @@ pythonw main.py
 
 ## ライセンス
 
-TODO(要確認): LICENSE ファイルがなく、ライセンスは定められていない。
+ライセンスは定めていない（LICENSE ファイルはない）。
